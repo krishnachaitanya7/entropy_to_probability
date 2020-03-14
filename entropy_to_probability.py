@@ -52,4 +52,4 @@ if __name__ == "__main__":
     open(file_name, 'w').close()
     np.savetxt(file_name, final_save_matrix,
                delimiter=',', header="X_validation,Original_Y,Predicted_y", comments="")
-    # Noted RMSE: 2.4193589635342583e-05
+    # Noted RMSE: 9.070411888314994e-06
