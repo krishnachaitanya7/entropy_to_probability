@@ -5,6 +5,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from sklearn.metrics import mean_squared_error
 import numpy as np
+import os
 
 changed_lr = False
 
@@ -12,7 +13,7 @@ changed_lr = False
 class LearningRateReducerCb(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
         global changed_lr
-        if not changed_lr and logs['mse'] < 2e-05:
+        if not changed_lr and logs['mse'] < 5e-06:
             old_lr = self.model.optimizer.lr.read_value()
             new_lr = old_lr / 10
             print("\nEpoch: {}. Reducing Learning Rate from {} to {}".format(epoch, old_lr, new_lr))
@@ -52,4 +53,6 @@ if __name__ == "__main__":
     open(file_name, 'w').close()
     np.savetxt(file_name, final_save_matrix,
                delimiter=',', header="X_validation,Original_Y,Predicted_y", comments="")
+    os.remove("my_model/entropy_to_probability.h5")
+    model.save("my_model/entropy_to_probability.h5")
     # Noted RMSE: 9.070411888314994e-06
