@@ -13,7 +13,7 @@ if __name__ == "__main__":
     y = df["Output"].values
     file_name = "Final_values.csv"
     MAX_EPOCHS = 2000
-    BATCH = 30
+    BATCH = 100
     X_train, X_testing, y_train, y_testing = train_test_split(X, y, test_size=0.2)
     X_test, X_val, y_test, y_val = train_test_split(X_testing, y_testing, test_size=0.5)
     # Change the shape of all
@@ -24,6 +24,7 @@ if __name__ == "__main__":
     X_val = X_val.reshape((len(X_val), 1, 1))
     y_val = y_val.reshape((len(y_val), 1, 1))
     model = keras.Sequential()
+    model.add(layers.SimpleRNN(4, activation=tf.keras.activations.exponential, return_sequences=True))
     model.add(layers.SimpleRNN(4, activation=tf.keras.activations.exponential))
     model.add(layers.Dense(1, activation=tf.keras.activations.exponential))
     model.compile(loss=tf.keras.losses.MeanSquaredLogarithmicError(),
@@ -38,6 +39,6 @@ if __name__ == "__main__":
     open(file_name, 'w').close()
     np.savetxt(file_name, final_save_matrix,
                delimiter=',', header="X_validation,Original_Y,Predicted_y", comments="")
-    # Noted RMSE: 7.175020686614251e-05
+    # Noted RMSE: 2.4193589635342583e-05
 
 
