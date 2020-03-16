@@ -5,22 +5,9 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from sklearn.metrics import mean_squared_error
 import numpy as np
-import os
-import pickle
 
 changed_lr = False
 folder_name = "my_model"
-
-
-class LearningRateReducerCb(tf.keras.callbacks.Callback):
-    def on_epoch_end(self, epoch, logs={}):
-        global changed_lr
-        if not changed_lr and logs['mse'] < 5e-06:
-            old_lr = self.model.optimizer.lr.read_value()
-            new_lr = old_lr / 10
-            print("\nEpoch: {}. Reducing Learning Rate from {} to {}".format(epoch, old_lr, new_lr))
-            self.model.optimizer.lr.assign(new_lr)
-            changed_lr = True
 
 
 if __name__ == "__main__":
@@ -45,8 +32,8 @@ if __name__ == "__main__":
     model.add(layers.Dense(1, activation=tf.keras.activations.sigmoid))
     model.compile(loss=tf.keras.losses.MeanAbsoluteError(),
                   optimizer=tf.keras.optimizers.Adam(1e-4),
-                  metrics=['mse'])
-    model.fit(X_train, y_train, epochs=MAX_EPOCHS, batch_size=BATCH, verbose=1, callbacks=[LearningRateReducerCb()],
+                  metrics=['mae'])
+    model.fit(X_train, y_train, epochs=MAX_EPOCHS, batch_size=BATCH, verbose=1,
               validation_data=(X_test, y_test))
     y_pred = model.predict(X_val)
     rmse_calculated = mean_squared_error(y_pred.flatten(), y_val.flatten())
