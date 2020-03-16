@@ -9,6 +9,15 @@ import numpy as np
 changed_lr = False
 folder_name = "my_model"
 
+class LearningRateReducerCb(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs={}):
+        global changed_lr
+        if not changed_lr and logs['mae'] < 0.02:
+            old_lr = self.model.optimizer.lr.read_value()
+            new_lr = old_lr / 10
+            print("\nEpoch: {}. Reducing Learning Rate from {} to {}".format(epoch, old_lr, new_lr))
+            self.model.optimizer.lr.assign(new_lr)
+            changed_lr = True
 
 if __name__ == "__main__":
     df = pd.read_csv("entropy.csv")
@@ -27,13 +36,14 @@ if __name__ == "__main__":
     X_val = X_val.reshape((len(X_val), 1, 1))
     y_val = y_val.reshape((len(y_val), 1, 1))
     model = keras.Sequential()
-    model.add(layers.SimpleRNN(4, return_sequences=True))
-    model.add(layers.SimpleRNN(4))
+    model.add(layers.SimpleRNN(5, return_sequences=True))
+    model.add(layers.SimpleRNN(5))
     model.add(layers.Dense(1, activation=tf.keras.activations.sigmoid))
     model.compile(loss=tf.keras.losses.MeanAbsoluteError(),
-                  optimizer=tf.keras.optimizers.Adam(1e-4),
+                  optimizer=tf.keras.optimizers.Nadam(1e-4),
                   metrics=['mae'])
     model.fit(X_train, y_train, epochs=MAX_EPOCHS, batch_size=BATCH, verbose=1,
+              # callbacks=[LearningRateReducerCb()],
               validation_data=(X_test, y_test))
     y_pred = model.predict(X_val)
     rmse_calculated = mean_squared_error(y_pred.flatten(), y_val.flatten())
@@ -44,4 +54,4 @@ if __name__ == "__main__":
                delimiter=',', header="X_validation,Original_Y,Predicted_y", comments="")
     # os.remove(file_name)
     model.save(folder_name, save_format='tf')
-    # Noted RMSE: 9.070411888314994e-06
+    # Noted RMSE: 4.1091989895786396e-06

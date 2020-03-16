@@ -21,7 +21,7 @@ class entropy_to_probability:
 
 
 if __name__ == "__main__":
-    etp = entropy_to_probability("my_model/entropy_to_probability.h5")
-    pred_prob = etp.predict_probability(0.00803046115242)
+    etp = entropy_to_probability("my_model")
+    pred_prob = etp.predict_probability(0.3098884946900000159)
     print(pred_prob)
 
