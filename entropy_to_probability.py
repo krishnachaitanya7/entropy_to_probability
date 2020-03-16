@@ -6,8 +6,10 @@ from tensorflow.keras import layers
 from sklearn.metrics import mean_squared_error
 import numpy as np
 import os
+import pickle
 
 changed_lr = False
+folder_name = "my_model"
 
 
 class LearningRateReducerCb(tf.keras.callbacks.Callback):
@@ -41,7 +43,7 @@ if __name__ == "__main__":
     model.add(layers.SimpleRNN(4, return_sequences=True))
     model.add(layers.SimpleRNN(4))
     model.add(layers.Dense(1, activation=tf.keras.activations.sigmoid))
-    model.compile(loss=tf.keras.losses.mean_squared_error,
+    model.compile(loss=tf.keras.losses.MeanAbsoluteError(),
                   optimizer=tf.keras.optimizers.Adam(1e-4),
                   metrics=['mse'])
     model.fit(X_train, y_train, epochs=MAX_EPOCHS, batch_size=BATCH, verbose=1, callbacks=[LearningRateReducerCb()],
@@ -53,6 +55,6 @@ if __name__ == "__main__":
     open(file_name, 'w').close()
     np.savetxt(file_name, final_save_matrix,
                delimiter=',', header="X_validation,Original_Y,Predicted_y", comments="")
-    os.remove("my_model/entropy_to_probability.h5")
-    model.save("my_model/entropy_to_probability.h5")
+    # os.remove(file_name)
+    model.save(folder_name, save_format='tf')
     # Noted RMSE: 9.070411888314994e-06
