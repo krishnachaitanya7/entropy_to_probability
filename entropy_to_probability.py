@@ -5,6 +5,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from sklearn.metrics import mean_squared_error
 import numpy as np
+import datetime
 
 changed_lr = False
 folder_name = "my_model"
@@ -12,7 +13,7 @@ folder_name = "my_model"
 class LearningRateReducerCb(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
         global changed_lr
-        if not changed_lr and logs['mae'] < 0.02:
+        if not changed_lr and logs['mae'] < 0.0009:
             old_lr = self.model.optimizer.lr.read_value()
             new_lr = old_lr / 10
             print("\nEpoch: {}. Reducing Learning Rate from {} to {}".format(epoch, old_lr, new_lr))
@@ -35,6 +36,8 @@ if __name__ == "__main__":
     y_test = y_test.reshape((len(y_test), 1, 1))
     X_val = X_val.reshape((len(X_val), 1, 1))
     y_val = y_val.reshape((len(y_val), 1, 1))
+    log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
     model = keras.Sequential()
     model.add(layers.SimpleRNN(5, return_sequences=True))
     model.add(layers.SimpleRNN(5))
@@ -43,7 +46,7 @@ if __name__ == "__main__":
                   optimizer=tf.keras.optimizers.Nadam(1e-4),
                   metrics=['mae'])
     model.fit(X_train, y_train, epochs=MAX_EPOCHS, batch_size=BATCH, verbose=1,
-              # callbacks=[LearningRateReducerCb()],
+              callbacks=[LearningRateReducerCb(), tensorboard_callback],
               validation_data=(X_test, y_test))
     y_pred = model.predict(X_val)
     rmse_calculated = mean_squared_error(y_pred.flatten(), y_val.flatten())
