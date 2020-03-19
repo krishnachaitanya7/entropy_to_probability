@@ -12,7 +12,6 @@ import datetime
 import shutil
 import os
 
-global model
 # changed_lr = False
 folder_name = "my_model"
 
@@ -32,14 +31,15 @@ class LearningRateReducerCb(tf.keras.callbacks.Callback):
 
 
 def make_model():
-    global model
-    model = keras.Sequential()
-    model.add(layers.SimpleRNN(5, return_sequences=True))
-    model.add(layers.SimpleRNN(5))
-    model.add(layers.Dense(1, activation=tf.keras.activations.sigmoid))
-    model.compile(loss=tf.keras.losses.MeanAbsoluteError(),
+    my_model = keras.Sequential()
+    my_model.add(layers.SimpleRNN(5, return_sequences=True))
+    my_model.add(layers.SimpleRNN(5))
+    my_model.add(layers.Dense(1, activation=tf.keras.activations.sigmoid))
+    my_model.compile(loss=tf.keras.losses.MeanAbsoluteError(),
                   optimizer=tf.keras.optimizers.Nadam(1e-4),
                   metrics=['mae'])
+    return my_model
+
 
 if __name__ == "__main__":
     df = pd.read_csv("entropy.csv")
@@ -57,18 +57,27 @@ if __name__ == "__main__":
     y_test = y_test.reshape((len(y_test), 1, 1))
     X_val = X_val.reshape((len(X_val), 1, 1))
     y_val = y_val.reshape((len(y_val), 1, 1))
+    # Now let's code the callbacks
+    # Tensorboard callbacks
     log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-    outputFolder = './checkpoints'
-    if not os.path.exists(outputFolder):
-        os.makedirs(outputFolder)
-    filepath = outputFolder + "/model-{epoch:02d}-{mae:.2f}.ckpt"
-    checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-        filepath, monitor='mae', verbose=1, save_weights_only=True, save_freq=10)
-    make_model()
-    model.load_weights(outputFolder+'/model-30-0.02.ckpt.index')
+    # Model saving Checkpoint callback
+    checkpoint_path = "training_2/cp-{epoch:04d}.ckpt"
+    checkpoint_dir = os.path.dirname(checkpoint_path)
+
+    # Create a callback that saves the model's weights
+    cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
+                                                     save_weights_only=True,
+                                                     verbose=1, period=10)
+    model = make_model()
+    latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir)
+    if latest_checkpoint:
+        print("Checkpoint Found!!!!")
+        model.load_weights(latest_checkpoint)
+    else:
+        print("No model found, Everything will start from epoch 0")
     model.fit(X_train, y_train, epochs=MAX_EPOCHS, batch_size=BATCH, verbose=1,
-              callbacks=[LearningRateReducerCb(), tensorboard_callback, checkpoint_callback],
+              callbacks=[LearningRateReducerCb(), tensorboard_callback, cp_callback],
               validation_data=(X_test, y_test))
     y_pred = model.predict(X_val)
     rmse_calculated = mean_squared_error(y_pred.flatten(), y_val.flatten())
